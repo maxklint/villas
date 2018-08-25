@@ -9,7 +9,7 @@ function preload() {
 
 function setup() {
     createCanvas(windowWidth, windowHeight);
-    frameRate(15);
+    frameRate(10);
 
     for (const img of images) {
         villas.push(new Villa(img));
@@ -32,20 +32,20 @@ function Villa(image) {
     this.pos = createVector(
         round(random(width - this.w)),
         round(random(height - this.h)));
-    this.from = this.pos;
-    this.to = this.pos;
+    this.from = this.pos.copy();
+    this.to = this.pos.copy();
     this.pace = 'slow';
 }
 
 Villa.prototype.update = function () {
     if (this.pos.dist(this.to) < min(this.w, this.h)) {
-        this.from = this.to;
+        this.from = this.to.copy();
         this.to = this.newDirection();
     }
 
-    let speed = this.getSpeed();
+    let v = this.velocity();
     let direction = p5.Vector.sub(this.to, this.pos).normalize();
-    let transposition = p5.Vector.mult(direction, speed);
+    let transposition = p5.Vector.mult(direction, v);
     this.pos.add(transposition);
 };
 
@@ -59,20 +59,20 @@ Villa.prototype.newDirection = function () {
         round(random(height - this.h)));
 }
 
-Villa.prototype.getSpeed = function () {
-    // let behind = this.pos.dist(this.from);
-    // let ahead = this.pos.dist(this.to);
-    // let progress = behind / (behind + ahead);
-
-    // let trajectory = this.to.sub(this.from);
-    // let distance = trajectory.mag();
-    // let direction = this.to.sub(this.pos);
-    // let speed = direction.setMag(distance / 10);
-    // return speed;
-
-    // TODO: calculate based on pace and progress
+Villa.prototype.velocity = function () {
     let diagonal = sqrt(sq(width) + sq(height));
     let fr = frameRate();
-    if(fr === 0) return 0;
-    return diagonal / ( 10 * fr);
+    if (fr === 0) return 0;
+    let maxVelocity = diagonal / (10 * fr);
+    let minVelocity = maxVelocity / 10;
+
+    let behind = this.pos.dist(this.from);
+    let ahead = this.pos.dist(this.to);
+    let progress = behind / (behind + ahead);
+    // point on quadratic curve
+    let velocity = (-4 * (maxVelocity - minVelocity)  * sq(progress))
+        + 4 * (maxVelocity - minVelocity)  * progress 
+        + minVelocity;
+
+    return velocity;
 }
