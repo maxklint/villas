@@ -1,7 +1,7 @@
 var images = [];
 var villas = [];
 var drawDebug = false;
-var framerate = 15;
+var framerate = 30;
 
 function preload() {
     for (let i = 1; i <= 18; i++) {
@@ -19,7 +19,7 @@ function setup() {
 }
 
 function draw() {
-    background('rgba(255, 255, 255, 0.5)');
+    background('rgba(232, 232, 232, 0.3)');
     for (const villa of villas) {
         villa.update();
         villa.draw();
@@ -41,7 +41,7 @@ function Villa(image) {
     this.from = this.pos.copy();
     this.to = this.pos.copy();
     this.step = 0;
-    this.steps = 30;
+    this.steps = 40;
     this.pace = 'slow';
     this.wait = round(random(1, framerate * 2));
 }
