@@ -10,6 +10,7 @@ function preload() {
 }
 
 function setup() {
+    imageMode(CENTER);
     createCanvas(windowWidth, windowHeight);
     frameRate(framerate);
 
@@ -26,17 +27,21 @@ function draw() {
     }
 }
 
+function randomPoint(w, h) {
+    return createVector(round(random(w, width - w)), round(random(h, height - h)));
+}
+
 function Villa(image) {
     // TODO: scale images
     this.img = image;
     this.w = image.width;
     this.h = image.height;
-    this.pos = createVector(round(random(width - this.w)), round(random(height - this.h)));
+    this.pos = randomPoint(this.w, this.h);
     this.curve = {
         from: this.pos.copy(),
-        cp1: createVector(round(random(width - this.w)), round(random(height - this.h))),
-        cp2: createVector(round(random(width - this.w)), round(random(height - this.h))),
-        to: createVector(round(random(width - this.w)), round(random(height - this.h)))
+        cp1: randomPoint(this.w, this.h),
+        cp2: randomPoint(this.w, this.h),
+        to: randomPoint(this.w, this.h)
     }
     this.from = this.pos.copy();
     this.to = this.pos.copy();
@@ -44,6 +49,7 @@ function Villa(image) {
     this.steps = 40;
     this.pace = 'slow';
     this.wait = round(random(1, framerate * 2));
+    this.angle = 0;
 }
 
 Villa.prototype.update = function () {
@@ -61,12 +67,20 @@ Villa.prototype.update = function () {
     }
 
     if (this.pos.dist(this.to) < min(this.w, this.h)) {
+        let oldDirection = p5.Vector.sub(this.to, this.from);
+
         this.from = this.to.copy();
         this.to = createVector(
             bezierPoint(this.curve.from.x, this.curve.cp1.x,
                 this.curve.cp2.x, this.curve.to.x, (this.step + 1) / this.steps),
             bezierPoint(this.curve.from.y, this.curve.cp1.y,
                 this.curve.cp2.y, this.curve.to.y, (this.step + 1) / this.steps));
+
+        let newDirection = p5.Vector.sub(this.to, this.from);
+        let turn = oldDirection.angleBetween(newDirection);
+        if (isNaN(turn)) turn = 0;
+        this.angle = (this.angle + turn) % TWO_PI;
+
         this.step++;
     }
 
@@ -77,7 +91,11 @@ Villa.prototype.update = function () {
 };
 
 Villa.prototype.draw = function () {
-    image(this.img, this.pos.x, this.pos.y);
+    push();
+    translate(this.pos.x, this.pos.y);
+    rotate(this.angle);
+    image(this.img, 0, 0);
+    pop();
 
     if (drawDebug) {
         push();
