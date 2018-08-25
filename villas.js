@@ -28,7 +28,15 @@ function draw() {
 }
 
 function randomPoint(w, h) {
-    return createVector(round(random(w, width - w)), round(random(h, height - h)));
+    return createVector(
+        round(random(w, width - w)),
+        round(random(h, height - h)));
+}
+
+function pointOnCurve({ from, cp1, cp2, to }, position) {
+    return createVector(
+        bezierPoint(from.x, cp1.x, cp2.x, to.x, position),
+        bezierPoint(from.y, cp1.y, cp2.y, to.y, position));
 }
 
 function Villa(image) {
@@ -37,27 +45,24 @@ function Villa(image) {
     this.w = image.width;
     this.h = image.height;
     this.pos = randomPoint(this.w, this.h);
-    this.curve = {
-        from: this.pos.copy(),
-        cp1: randomPoint(this.w, this.h),
-        cp2: randomPoint(this.w, this.h),
-        to: randomPoint(this.w, this.h)
-    }
+    this.curve = this.newCurve();
     this.from = this.pos.copy();
     this.to = this.pos.copy();
     this.step = 0;
-    this.steps = 40;
+    this.steps = 40; // points of trajectory approximation
     this.pace = 'slow';
     this.wait = round(random(1, framerate * 2));
     this.angle = 0;
 }
 
 Villa.prototype.update = function () {
+    // end of trajectory
     if (this.step === this.steps) {
         this.step = 0;
         this.curve = this.newCurve();
         this.from = this.pos.copy();
         this.to = this.pos.copy();
+        // insert wait time before next leap
         this.wait = round(random(frameRate() * 5));
     }
 
@@ -66,21 +71,16 @@ Villa.prototype.update = function () {
         return;
     }
 
+    // end of linear fragment of trajectory
     if (this.pos.dist(this.to) < min(this.w, this.h)) {
         let oldDirection = p5.Vector.sub(this.to, this.from);
-
         this.from = this.to.copy();
-        this.to = createVector(
-            bezierPoint(this.curve.from.x, this.curve.cp1.x,
-                this.curve.cp2.x, this.curve.to.x, (this.step + 1) / this.steps),
-            bezierPoint(this.curve.from.y, this.curve.cp1.y,
-                this.curve.cp2.y, this.curve.to.y, (this.step + 1) / this.steps));
-
+        this.to = pointOnCurve(this.curve, (this.step + 1) / this.steps);
         let newDirection = p5.Vector.sub(this.to, this.from);
         let turn = oldDirection.angleBetween(newDirection);
         if (isNaN(turn)) turn = 0;
         this.angle = (this.angle + turn) % TWO_PI;
-
+        // go on to next fragment
         this.step++;
     }
 
